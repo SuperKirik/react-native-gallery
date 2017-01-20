@@ -1,6 +1,8 @@
 import React, { Component, PropTypes } from 'react';
 import {
-  View
+  View,
+  Dimensions,
+  ActivityIndicator,
 } from 'react-native';
 
 import Image from 'react-native-transformable-image';
@@ -33,6 +35,14 @@ export default class Gallery extends Component {
 
   constructor(props) {
     super(props);
+    const { height, width } = Dimensions.get('window');
+    this.dimensions = {
+      height,
+      width,
+    };
+    this.state = {
+      loading: false,
+    };
   }
 
   componentWillMount() {
@@ -85,6 +95,8 @@ export default class Gallery extends Component {
             }
           }
         }
+        const offset = Math.abs((this.dimensions.height / 2) - gestureState.moveY);
+        this.props.onMove && this.props.onMove(offset);
         this.activeResponder.onMove(evt, gestureState);
       },
       onResponderRelease: onResponderReleaseOrTerminate.bind(this),
@@ -115,6 +127,25 @@ export default class Gallery extends Component {
         this.getCurrentImageTransformer().onResponderMove(evt, gestureState);
       },
       onEnd: (evt, gestureState) => {
+        if (gestureState.moveY === 0) {
+          this.getCurrentImageTransformer().onResponderRelease(evt, gestureState);
+          return;
+        }
+        if (gestureState.moveY < (this.dimensions.height * this.props.threshold / 100)) {
+          this.props.onVerticalToTopScroll(gestureState.moveY)
+            .then(() => {
+              this.getCurrentImageTransformer().onResponderRelease(evt, gestureState);
+            });
+          return;
+        }
+        if (gestureState.moveY > this.dimensions.height - (this.dimensions.height * this.props.threshold / 100)) {
+          this.props.onVerticalToBottomScroll(gestureState.moveY)
+            .then(() => {
+              this.getCurrentImageTransformer().onResponderRelease(evt, gestureState);
+            });
+          return;
+        }
+        this.props.onPressEnd();
         this.getCurrentImageTransformer().onResponderRelease(evt, gestureState);
       }
     }
@@ -202,6 +233,10 @@ export default class Gallery extends Component {
     );
   }
 
+  setPage(page) {
+    this.refs['galleryViewPager'].setPage(page);
+  }
+
   onPageSelected(page) {
     this.currentPage = page;
     this.props.onPageSelected && this.props.onPageSelected(page);
@@ -218,8 +253,40 @@ export default class Gallery extends Component {
     this.props.onPageScroll && this.props.onPageScroll(e);
   }
 
+  onLoadStart = (e) => {
+    if (this.props.onLoadStart) {
+      this.props.onLoadStart(e);
+    }
+
+    this.setState({ loading: true });
+  }
+
+  onLoadEnd = (e) => {
+    if (this.props.onLoadEnd) {
+      this.props.onLoadEnd(e);
+    }
+
+    this.setState({ loading: false });
+  }
+
   renderPage(pageData, pageId, layout) {
     const { onViewTransformed, onTransformGestureReleased, ...other } = this.props;
+    const loader = this.state.loading
+      ? (
+        <View
+          style={{
+            justifyContent: 'center',
+            alignItems: 'center',
+            flex: 1,
+          }}
+        >
+          {this.props.renderLoader
+            ? this.props.renderLoader()
+            : <ActivityIndicator />
+          }
+        </View>
+      )
+      : null;
     return (
       <Image
         {...other}
@@ -234,7 +301,12 @@ export default class Gallery extends Component {
         }).bind(this)}
         key={'innerImage#' + pageId}
         style={{width: layout.width, height: layout.height}}
-        source={{uri: pageData}}/>
+        onLoadStart={this.onLoadStart}
+        onLoadEnd={this.onLoadEnd}
+        source={{uri: pageData}}
+      >
+        {loader}
+      </Image>
     );
   }
 
