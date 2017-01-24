@@ -110,7 +110,6 @@ export default class Gallery extends Component {
 
     this.viewPagerResponder = {
       onStart: (evt, gestureState) => {
-        console.log(123);
         this.getViewPagerInstance().onResponderGrant(evt, gestureState);
       },
       onMove: (evt, gestureState) => {
@@ -123,7 +122,6 @@ export default class Gallery extends Component {
 
     this.imageResponder = {
       onStart: ((evt, gestureState) => {
-        console.log(321);
         this.getCurrentImageTransformer().onResponderGrant(evt, gestureState);
       }),
       onMove: (evt, gestureState) => {
@@ -195,7 +193,6 @@ export default class Gallery extends Component {
   getImageTransformer(page) {
     if (page >= 0 && page < this.pageCount) {
       let ref = this.imageRefs.get(page + '');
-      console.log('QQQ1', ref, page);
       if (ref) {
         return ref.getViewTransformerInstance();
       }
