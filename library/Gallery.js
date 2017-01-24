@@ -3,6 +3,7 @@ import {
   View,
   Dimensions,
   ActivityIndicator,
+  TouchableOpacity,
 } from 'react-native';
 
 import Image from 'react-native-transformable-image';
@@ -109,6 +110,7 @@ export default class Gallery extends Component {
 
     this.viewPagerResponder = {
       onStart: (evt, gestureState) => {
+        console.log(123);
         this.getViewPagerInstance().onResponderGrant(evt, gestureState);
       },
       onMove: (evt, gestureState) => {
@@ -121,9 +123,11 @@ export default class Gallery extends Component {
 
     this.imageResponder = {
       onStart: ((evt, gestureState) => {
+        console.log(321);
         this.getCurrentImageTransformer().onResponderGrant(evt, gestureState);
       }),
       onMove: (evt, gestureState) => {
+        this.props.onStartMove();
         this.getCurrentImageTransformer().onResponderMove(evt, gestureState);
       },
       onEnd: (evt, gestureState) => {
@@ -191,6 +195,7 @@ export default class Gallery extends Component {
   getImageTransformer(page) {
     if (page >= 0 && page < this.pageCount) {
       let ref = this.imageRefs.get(page + '');
+      console.log('QQQ1', ref, page);
       if (ref) {
         return ref.getViewTransformerInstance();
       }
@@ -287,7 +292,7 @@ export default class Gallery extends Component {
         </View>
       )
       : null;
-    return (
+    return typeof pageData === 'string' ? (
       <Image
         {...other}
         onViewTransformed={((transform) => {
@@ -300,13 +305,44 @@ export default class Gallery extends Component {
            this.imageRefs.set(pageId, ref);
         }).bind(this)}
         key={'innerImage#' + pageId}
-        style={{width: layout.width, height: layout.height}}
+        style={[{ width: layout.width, height: layout.height },
+          typeof pageData === 'string' ? {} : { tintColor: 'white' }]}
         onLoadStart={this.onLoadStart}
         onLoadEnd={this.onLoadEnd}
-        source={{uri: pageData}}
+        source={typeof pageData === 'string' ? { uri: pageData } : pageData}
       >
         {loader}
       </Image>
+    ) : (
+      <View
+        style={{
+          flex: 1,
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
+        <Image
+          {...other}
+          onViewTransformed={((transform) => {
+             onViewTransformed && onViewTransformed(transform, pageId);
+          }).bind(this)}
+          onTransformGestureReleased={((transform) => {
+             onTransformGestureReleased && onTransformGestureReleased(transform, pageId);
+          }).bind(this)}
+          ref={((ref) => {
+             this.imageRefs.set(pageId, ref);
+          }).bind(this)}
+          key={'innerImage#' + pageId}
+          style={{
+            height: 100,
+            width: 100,
+            tintColor: 'white',
+          }}
+          onLoadStart={this.onLoadStart}
+          onLoadEnd={this.onLoadEnd}
+          source={pageData}
+        />
+      </View>
     );
   }
 
