@@ -125,7 +125,7 @@ export default class Gallery extends Component {
         this.getCurrentImageTransformer().onResponderGrant(evt, gestureState);
       }),
       onMove: (evt, gestureState) => {
-        this.props.onStartMove();
+        this.props.onStartMove && this.props.onStartMove();
         this.getCurrentImageTransformer().onResponderMove(evt, gestureState);
       },
       onEnd: (evt, gestureState) => {
@@ -147,7 +147,7 @@ export default class Gallery extends Component {
             });
           return;
         }
-        this.props.onPressEnd();
+        this.props.onPressEnd && this.props.onPressEnd();
         this.getCurrentImageTransformer().onResponderRelease(evt, gestureState);
       }
     }
@@ -161,10 +161,10 @@ export default class Gallery extends Component {
     const space = viewTransformer.getAvailableTranslateSpace();
     const dx = gestureState.moveX - gestureState.previousMoveX;
 
-    if (dx > 0 && space.left <= 0 && this.currentPage > 0) {
+    if (dx > 3 && space.left <= 0 && this.currentPage > 0) {
       return true;
     }
-    if (dx < 0 && space.right <= 0 && this.currentPage < this.pageCount - 1) {
+    if (dx < -3 && space.right <= 0 && this.currentPage < this.pageCount - 1) {
       return true;
     }
     return false;
@@ -292,6 +292,7 @@ export default class Gallery extends Component {
     return typeof pageData === 'string' ? (
       <Image
         {...other}
+        resizeMode="center"
         onViewTransformed={((transform) => {
            onViewTransformed && onViewTransformed(transform, pageId);
         }).bind(this)}
@@ -302,7 +303,7 @@ export default class Gallery extends Component {
            this.imageRefs.set(pageId, ref);
         }).bind(this)}
         key={'innerImage#' + pageId}
-        style={[{ width: layout.width, height: layout.height },
+        style={[{ width: this.dimensions.width, height: this.dimensions.height },
           typeof pageData === 'string' ? {} : { tintColor: 'white' }]}
         onLoadStart={this.onLoadStart}
         onLoadEnd={this.onLoadEnd}
@@ -320,6 +321,7 @@ export default class Gallery extends Component {
       >
         <Image
           {...other}
+          resizeMode="center"
           onViewTransformed={((transform) => {
              onViewTransformed && onViewTransformed(transform, pageId);
           }).bind(this)}
